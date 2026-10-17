@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#09111f"><title>Phone-Con v6 | Controller Bridge Lab</title>
+<meta name="theme-color" content="#09111f"><title>JoyGPT | LDN Protocol Lab + Phone-Con v6</title>
 <style>
 :root{color-scheme:dark;--bg:#07101d;--panel:#12223a;--line:#304865;--text:#edf6ff;--muted:#a6bdd7;--blue:#32c4ff;--green:#65efab;--gold:#ffd58b;--red:#ff9999}
 *{box-sizing:border-box}body{margin:0;padding:12px;background:radial-gradient(ellipse at top,#203858,var(--bg) 70%);color:var(--text);font:15px system-ui,-apple-system,sans-serif;min-height:100vh}
@@ -17,6 +17,10 @@ button{background:#203b5c;border:1px solid #557597;color:var(--text);border-radi
 <body><main>
 <header class="hero"><div class="title">📱 PHONE-CON <span style="color:var(--blue)">v6</span></div><div class="subtitle">MAXIMUM DEVICE LAB · USB · Bluetooth · HID · Serial · MIDI · Gamepads · Motion</div><div class="callout"><b>Mission:</b> expose every useful browser-side path and report what the phone can actually see. All scans are user-triggered. This page never uploads diagnostics, never sends USB/HID/MIDI/serial commands, and cannot make the phone advertise itself as a Switch controller.</div></header>
 
+<section class="panel"><h2>🦑 New: JoyGPT v15 LDN Protocol Lab</h2>
+<p class="muted">Version-matched Splatoon 2 / Splatoon 3 v11.3.0 protocol notes and a conservative offline packet inspector. It only decodes documented envelope fields and packet type bytes; unknown game fields remain unknown. No live network access or fake join status.</p>
+<div class="row"><a href="./joygpt_v15_ldn_protocol_lab.html">Open the v15 Protocol Lab →</a></div>
+</section>
 
 <section class="panel"><h2>🎮 Android → Switch controller bridge</h2>
 <p class="muted">Want the phone itself to act like a real Switch controller? That needs Android to advertise a Bluetooth game-controller device. A webpage cannot do that, so this is an external-app guide rather than fake “connected!” buttons.</p>
