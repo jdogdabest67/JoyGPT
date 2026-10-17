@@ -59,8 +59,33 @@
 <div class="callout"><b>Current practical limit:</b> with only the Galaxy A37 5G, Switch 2, and a normal browser, there is no demonstrated path to transmit LDN action frames. USB file transfer, USB tethering, MIDI, and charging modes do not turn the phone into a second Switch or a raw Wi-Fi radio. This branch stays research-only until suitable hardware and a validated protocol path exist.</div>
 </section>
 \n
+<section class="panel" id="radio-checklist">
+<h2>🛠️ 5 · Radio hardware checklist · build 2026-10-17</h2>
+<p><b>This is the new update marker.</b> If this heading appears on the published site, the new HTML reached GitHub Pages. If it does not, the problem is deployment or caching, not the radio code.</p>
+<p>The goal is a real local-wireless research path, not a fake “connected” screen. No compatible radio board has been selected or tested yet.</p>
+<div class="callout"><b>Do not buy a random ESP32 or Wi-Fi dongle based on the name alone.</b> The device must support the exact low-level radio operations needed, and we still need a Splatoon-specific client. A radio by itself cannot join a Splatoon room.</div>
+<h3>Required capabilities before any hardware counts as a candidate</h3>
+<table><thead><tr><th>Requirement</th><th>What to verify in its official docs</th><th>Why it matters</th></tr></thead><tbody>
+<tr><td>1 · 802.11 management-frame RX</td><td>Can capture the relevant vendor-specific action frames on a chosen channel, with raw bytes preserved.</td><td>Needed to observe LDN advertisements and exchanges.</td></tr>
+<tr><td>2 · Action-frame TX</td><td>Can transmit the required frame type, not merely connect to a Wi-Fi access point or send ordinary IP traffic.</td><td>Normal Wi-Fi internet access is not LDN participation.</td></tr>
+<tr><td>3 · Channel control</td><td>Can tune to and remain on the target channel while capturing and transmitting.</td><td>Scanning or channel hopping may miss the session.</td></tr>
+<tr><td>4 · Host bridge</td><td>Has a documented way to exchange raw frames and status with a host, such as a supported USB serial protocol.</td><td>A browser needs a bridge to communicate with external hardware; Web Serial support alone does not provide radio features.</td></tr>
+<tr><td>5 · Android compatibility</td><td>Can be used with the phone's browser and permitted USB/serial access, or explicitly requires a native app.</td><td>This project is browser-first and the phone is managed, so native-app-only boards are not currently usable.</td></tr>
+<tr><td>6 · Game-specific protocol</td><td>A separate, version-matched implementation exists for Splatoon 3 v11.3.0 local wireless.</td><td>Radio capability does not supply Pia/LDN session logic or prove compatibility.</td></tr>
+</tbody></table>
+<h3>Current candidate verdicts</h3>
+<ul>
+<li><b>Built-in Galaxy A37 Wi-Fi:</b> not exposed to arbitrary raw action-frame TX/RX by ordinary webpage APIs. <b>Not a browser-only radio path.</b></li>
+<li><b>Generic ESP32 board:</b> do not assume it is enough. The referenced ESP-IDF raw TX capability has frame/encryption limitations, and no Splatoon client is known in this project. <b>Unverified candidate, not a recommendation to buy.</b></li>
+<li><b>ESP32 external-radio projects for other games:</b> useful proof of architecture only. Their supported-game lists do not establish Splatoon support, and a native-app requirement conflicts with this browser-only setup.</li>
+<li><b>Linux PC + compatible Wi-Fi adapter:</b> possible later capture/research route if hardware becomes available, but it is not phone-only and capture support does not automatically mean transmit or join support.</li>
+</ul>
+<h3>Next experiment, only when suitable hardware is available</h3>
+<ol><li>Record exact board/adapter model, radio chipset, firmware/driver, and official documentation links.</li><li>Verify receive and transmit support separately. Save an actual capture and note channel, timestamp, and capture method.</li><li>Decode only documented LDN envelope fields; leave encrypted or unknown game-specific data untouched.</li><li>Do not label the experiment a join until a retail console visibly recognizes the client and the session can be repeated.</li></ol>
+<p class="muted">References: <a href="https://docs.espressif.com/projects/esp-idf/en/release-v4.2/esp32/api-guides/wifi.html" target="_blank" rel="noopener">Espressif Wi-Fi API limits</a> · <a href="https://developer.chrome.com/docs/capabilities/serial" target="_blank" rel="noopener">Chrome Web Serial</a> · <a href="https://github.com/Decryptu/pokeldn" target="_blank" rel="noopener">pokeldn external-radio example (not Splatoon support)</a> · <a href="https://github.com/kinnay/NintendoClients/wiki/Local-Wireless-Communication-on-PC" target="_blank" rel="noopener">LDN local wireless research</a>.</p>
+</section>
 <section class="panel">
-<h2>5 · Real-connection acceptance criteria</h2>
+<h2>6 · Real-connection acceptance criteria</h2>
 <p>This project only earns the label <b>REAL JOIN VERIFIED</b> when the evidence proves the phone's client participated in the intended Splatoon 3 local session. A decoded byte pattern, a nearby console, or a promising-looking scan is not a join.</p>
 <div class="card">
 <h3>Evidence gates</h3>
