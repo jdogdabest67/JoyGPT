@@ -58,7 +58,49 @@
 </ul>
 <div class="callout"><b>Current practical limit:</b> with only the Galaxy A37 5G, Switch 2, and a normal browser, there is no demonstrated path to transmit LDN action frames. USB file transfer, USB tethering, MIDI, and charging modes do not turn the phone into a second Switch or a raw Wi-Fi radio. This branch stays research-only until suitable hardware and a validated protocol path exist.</div>
 </section>
-\n<footer class="panel muted">JoyGPT v15 · Protocol research only · No live networking · No packet transmission · No fake join status</footer>
+\n
+<section class="panel">
+<h2>5 · Real-connection acceptance criteria</h2>
+<p>This project only earns the label <b>REAL JOIN VERIFIED</b> when the evidence proves the phone's client participated in the intended Splatoon 3 local session. A decoded byte pattern, a nearby console, or a promising-looking scan is not a join.</p>
+<div class="card">
+<h3>Evidence gates</h3>
+<table>
+<thead><tr><th>Gate</th><th>Required evidence</th><th>Pass condition</th></tr></thead>
+<tbody>
+<tr><td>A. Hardware path</td><td>Identify the actual radio or supported bridge, its driver/firmware, and the documented transmit/receive capabilities.</td><td>Specific hardware and API are named and independently documented; “USB connected” alone fails.</td></tr>
+<tr><td>B. Observed traffic</td><td>Capture traffic from a controlled, authorized setup and retain the raw bytes, capture method, timestamp, and protocol/version assumptions.</td><td>Bytes are an actual capture, not a hand-entered sample; each interpretation is tied to a version-matched reference or labelled unknown.</td></tr>
+<tr><td>C. Session understanding</td><td>Document the relevant discovery, host/session, and failure paths for the exact game version.</td><td>Required fields and message transitions have evidence; unknown values remain unknown rather than being guessed.</td></tr>
+<tr><td>D. Client participation</td><td>Show that the client sends and receives the expected session traffic through the identified hardware path.</td><td>Both directions are observable and correlated to one test session; a one-way advertisement does not pass.</td></tr>
+<tr><td>E. Retail-console proof</td><td>On a retail Switch running the target Splatoon 3 version, show the expected room/player state and record the matching test-session evidence.</td><td>The console visibly recognizes the client in the intended local room/session. Repeat the test successfully after leaving and rejoining.</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Result labels we are allowed to use</h3>
+<ul>
+<li><b>DOCUMENTED:</b> supported by a public protocol or hardware reference.</li>
+<li><b>OFFLINE DECODED:</b> the inspector interpreted supplied bytes only. No claim that those bytes were captured live.</li>
+<li><b>LIVE TRAFFIC OBSERVED:</b> raw frames were captured from an identified setup. This still does not prove a session join.</li>
+<li><b>SESSION EXCHANGE OBSERVED:</b> both directions of relevant traffic were correlated to one test session. This still does not prove the game accepted the client.</li>
+<li><b>REAL JOIN VERIFIED:</b> the target retail console visibly accepted the client into the expected local room, and the result was repeatable.</li>
+</ul>
+<div class="callout"><b>Current status: BLOCKED BEFORE GATE A.</b> The available setup is a Galaxy A37 5G, a Switch 2, and a normal mobile browser. No compatible external radio or proven raw LDN frame path has been established, so no live traffic or join should be claimed. This is an honest blocker, not a failed packet test.</div>
+<h3>Test record template</h3>
+<pre>Game/version: Splatoon 3 v11.3.0
+Console: retail Switch 2
+Radio/bridge + firmware:
+Capture/host software + version:
+Protocol reference/version:
+Raw capture file/hash:
+Observed outgoing frames:
+Observed incoming frames:
+Unknown fields / unresolved steps:
+Console screen evidence:
+Leave-and-rejoin repeat result:
+Final label: NOT VERIFIED until Gate E passes</pre>
+<p>Safety/integrity rule: this checklist is for protocol observation and compatibility research. It does not implement authentication, forge replies, or treat simulated success as a real join.</p>
+</section>
+
+<footer class="panel muted">JoyGPT v15 · Protocol research only · No live networking · No packet transmission · No fake join status</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
