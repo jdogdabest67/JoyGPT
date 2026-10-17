@@ -80,6 +80,44 @@
 </div>
 <div class="callout" style="margin-top:10px"><b>What we can do right now:</b> compare documented protocol facts, inspect user-supplied or saved hex offline, check which browser bridge APIs exist, and record unknowns. What we cannot do from this webpage alone is sniff/transmit raw LDN frames or join a Splatoon room.</div>
 </section>
+
+<section class="panel" id="browser-plugins">
+<h2>🧩 Browser plugins · Switch toolbox</h2>
+<p>These are JavaScript modules that run inside this GitHub Pages site. No install required. They analyze saved data, keep a local notebook, and test browser access to compatible peripherals. They do not pretend to be a Nintendo Switch client.</p>
+<div class="grid">
+<div class="card"><h3>Module registry</h3><table><thead><tr><th>Module</th><th>Browser status</th><th>Job</th></tr></thead><tbody>
+<tr><td>LDN envelope decoder</td><td class="ok">Built in</td><td>Recognizes documented fields in pasted/saved bytes.</td></tr>
+<tr><td>Pia LAN type decoder</td><td class="ok">Built in</td><td>Identifies documented packet type byte only.</td></tr>
+<tr><td>Text capture importer / report exporter</td><td class="ok">Added</td><td>Loads saved .hex/.txt and downloads the offline decode report.</td></tr>
+<tr><td>USB / Serial chooser diagnostics</td><td class="ok">Added</td><td>Lets the user open the browser's device picker. No device is opened and no bytes are sent.</td></tr>
+<tr><td>Splatoon LDN/Pia client</td><td class="warn">Not available</td><td>No verified browser-ready client for Splatoon 3 v11.3.0 has been established.</td></tr>
+</tbody></table></div>
+<div class="card"><h3>Import saved packet bytes</h3><p class="muted">Select a plain-text .hex or .txt file containing only hex bytes and separators. The file stays in this browser. .pcap/.pcapng are not supported.</p>
+<input id="hex-file" type="file" accept=".hex,.txt,text/plain,.json,application/json">
+<div class="row" style="margin-top:8px"><button id="import-hex" type="button">Load into inspector</button><button id="export-report" type="button">Export decode report</button></div>
+<p id="file-status" class="muted" aria-live="polite">No file loaded.</p></div>
+<div class="card"><h3>Peripheral bridge checks</h3><p class="muted">These open the browser's device chooser only. They do not open the selected device, read/write endpoints, transmit radio frames, or connect to the Switch. Skip unless you actually have an appropriate adapter.</p>
+<div class="row"><button id="choose-serial" type="button">Choose serial port</button><button id="choose-usb" type="button">Choose USB device</button></div>
+<div class="readout" id="bridge-result" aria-live="polite">No device chooser opened.</div>
+<p class="muted">USB picker filters include common Espressif, Silicon Labs, WCH/CH340, and FTDI IDs. Finding a device does not prove LDN radio TX/RX or Splatoon compatibility.</p></div>
+<div class="card"><h3>Switch protocol pack</h3>
+<p><a href="https://github.com/kinnay/NintendoClients/wiki/LDN-Protocol" target="_blank" rel="noopener">LDN radio protocol ↗</a> · <a href="https://github.com/kinnay/NintendoClients/wiki/LAN-Protocol" target="_blank" rel="noopener">Pia LAN protocol ↗</a> · <a href="https://github.com/kinnay/NintendoClients/wiki/Pia-Protocol" target="_blank" rel="noopener">Pia overview ↗</a> · <a href="https://switchbrew.org/wiki/LDN_services" target="_blank" rel="noopener">Switch LDN service notes ↗</a></p>
+<p>These are documentation, not code plug-ins. Native Switch/Linux libraries cannot be made to access the built-in phone Wi-Fi radio just by copying them into a web page.</p></div>
+</div>
+<div class="card" style="margin-top:10px"><h3>Local experiment notebook</h3>
+<p class="muted">Saved in this browser's local storage on this device only. Export JSON to make a backup. Don't store passwords or private account details here.</p>
+<div class="grid">
+<div><label for="log-game">Game</label><select id="log-game"><option>Splatoon 3</option><option>Splatoon 2</option><option>Other Switch local wireless</option></select></div>
+<div><label for="log-version">Version</label><input id="log-version" value="11.3.0" autocomplete="off"></div>
+<div><label for="log-console">Console</label><input id="log-console" value="Nintendo Switch 2 (retail)" autocomplete="off"></div>
+<div><label for="log-path">Hardware / browser path</label><input id="log-path" value="Galaxy A37 5G · Chrome Beta · no external radio" autocomplete="off"></div>
+</div>
+<label for="log-status">Evidence status</label><select id="log-status"><option>PLANNING ONLY</option><option>DOCUMENTED</option><option>OFFLINE DECODED</option><option>LIVE TRAFFIC OBSERVED</option><option>SESSION EXCHANGE OBSERVED</option><option>REAL JOIN VERIFIED</option></select>
+<label for="log-notes">Notes and observations</label><textarea id="log-notes" rows="4" placeholder="What was actually observed? What remains unknown?"></textarea>
+<div class="row" style="margin-top:8px"><button id="save-log" type="button">Save on this device</button><button id="export-log" type="button">Export JSON backup</button><button id="import-log-button" type="button">Import JSON backup</button><input id="import-log-file" type="file" accept=".json,application/json" hidden></div>
+<p id="log-status-msg" class="muted" aria-live="polite">Notebook ready.</p></div>
+</section>
+
 <section class="panel" id="radio-checklist">
 <h2>🛠️ 5 · Radio hardware checklist · build 2026-10-17</h2>
 <p><b>This is the new update marker.</b> If this heading appears on the published site, the new HTML reached GitHub Pages. If it does not, the problem is deployment or caching, not the radio code.</p>
@@ -150,7 +188,7 @@ Final label: NOT VERIFIED until Gate E passes</pre>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-function bytesFromHex(s){const cleaned=s.replace(/0x/gi,'').replace(/[^0-9a-f]/gi,'');if(cleaned.length%2)throw Error('Hex input has an odd number of nibbles.');if(!cleaned.length)throw Error('Enter at least one byte.');return Uint8Array.from(cleaned.match(/.{2}/g),x=>parseInt(x,16));}
+function bytesFromHex(s){const raw=s.replace(/0x/gi,'');if(!/^[0-9a-f\\s,:;_\\-]*$/i.test(raw))throw Error('Input contains non-hex text. Use hex bytes and separators only.');const cleaned=raw.replace(/[\\s,:;_\\-]/g,'');if(cleaned.length%2)throw Error('Hex input has an odd number of nibbles.');if(!cleaned.length)throw Error('Enter at least one byte.');return Uint8Array.from(cleaned.match(/.{2}/g),x=>parseInt(x,16));}
 function hex(b){return Array.from(b,x=>x.toString(16).padStart(2,'0')).join(' ')}
 function need(b,n,what){if(b.length<n)throw Error('Truncated input: need at least '+n+' bytes for '+what+', got '+b.length+'.')}
 function u16le(b,o){return b[o]|(b[o+1]<<8)}
@@ -168,5 +206,69 @@ function checkBrowserApis(){
 }
 document.getElementById('check-apis')?.addEventListener('click',checkBrowserApis);
 checkBrowserApis();
+
+function downloadText(filename,content,mime='text/plain;charset=utf-8'){
+ const blob=new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+const fileStatus=document.getElementById('file-status');
+document.getElementById('import-hex')?.addEventListener('click',async()=>{
+ const file=document.getElementById('hex-file')?.files?.[0];
+ if(!file){fileStatus.textContent='Choose a .hex, .txt, or JSON file first.';return;}
+ try{
+  let content=await file.text();
+  if(file.name.toLowerCase().endsWith('.json')){
+   const data=JSON.parse(content);
+   if(typeof data.hex==='string')content=data.hex;
+   else if(typeof data.bytes==='string')content=data.bytes;
+   else throw Error('JSON needs a string field named "hex" or "bytes".');
+  }
+  bytesFromHex(content);
+  document.getElementById('hex').value=content;
+  fileStatus.textContent='Loaded '+file.name+' locally. Press “Decode documented fields” to inspect it.';
+ }catch(e){fileStatus.textContent='Could not load file: '+e.message+' No upload was made.';}
+});
+document.getElementById('export-report')?.addEventListener('click',()=>{
+ downloadText('joygpt-offline-decode.txt',document.getElementById('result').textContent||'No decode report yet.');
+});
+async function chooseSerial(){
+ const out=document.getElementById('bridge-result');
+ if(!navigator.serial){out.textContent='Web Serial is not available in this browser.';return;}
+ try{
+  const port=await navigator.serial.requestPort(),info=port.getInfo?port.getInfo():{};
+  out.textContent='Serial chooser selected a port. USB VID: '+(info.usbVendorId??'not exposed')+'; PID: '+(info.usbProductId??'not exposed')+'. Port was not opened and no bytes were sent. This is not evidence of LDN support.';
+ }catch(e){out.textContent=e.name==='NotFoundError'?'No serial port selected (none may be available, or chooser was cancelled).':'Serial chooser error: '+e.message;}
+}
+async function chooseUsb(){
+ const out=document.getElementById('bridge-result');
+ if(!navigator.usb){out.textContent='WebUSB is not available in this browser.';return;}
+ try{
+  const d=await navigator.usb.requestDevice({filters:[{vendorId:0x303A},{vendorId:0x10C4},{vendorId:0x1A86},{vendorId:0x0403}]});
+  out.textContent='USB chooser selected VID '+d.vendorId+' / PID '+d.productId+'. Device was not opened and no data was transferred. This does not prove LDN support.';
+ }catch(e){out.textContent=e.name==='NotFoundError'?'No matching USB device selected (none may be plugged in, or chooser was cancelled).':'USB chooser error: '+e.message;}
+}
+document.getElementById('choose-serial')?.addEventListener('click',chooseSerial);
+document.getElementById('choose-usb')?.addEventListener('click',chooseUsb);
+
+const logFields=['log-game','log-version','log-console','log-path','log-status','log-notes'],logKey='joygpt-v15-local-experiment-notebook';
+function readLog(){const log={schema:'joygpt-notebook-v1',updatedAt:new Date().toISOString()};for(const id of logFields)log[id]=document.getElementById(id).value;return log;}
+function applyLog(log){if(!log||log.schema!=='joygpt-notebook-v1')throw Error('Not a JoyGPT notebook backup.');for(const id of logFields)if(typeof log[id]==='string')document.getElementById(id).value=log[id];}
+function sayLog(t){document.getElementById('log-status-msg').textContent=t;}
+document.getElementById('save-log')?.addEventListener('click',()=>{
+ try{localStorage.setItem(logKey,JSON.stringify(readLog()));sayLog('Saved in this browser on this device.');}
+ catch(e){sayLog('Local save failed: '+e.message+' Use Export JSON backup instead.');}
+});
+document.getElementById('export-log')?.addEventListener('click',()=>{
+ downloadText('joygpt-experiment-notes.json',JSON.stringify(readLog(),null,2),'application/json;charset=utf-8');sayLog('Exported a JSON backup. Nothing was uploaded.');
+});
+document.getElementById('import-log-button')?.addEventListener('click',()=>document.getElementById('import-log-file')?.click());
+document.getElementById('import-log-file')?.addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{applyLog(JSON.parse(await file.text()));sayLog('Imported '+file.name+'. Press Save on this device to keep it locally.');}
+ catch(err){sayLog('Could not import backup: '+err.message);}
+});
+try{const saved=localStorage.getItem(logKey);if(saved){applyLog(JSON.parse(saved));sayLog('Loaded the last saved local notebook entry.');}}
+catch(e){sayLog('Local storage unavailable; export/import still works.');}
+
 
 </script></body></html>
