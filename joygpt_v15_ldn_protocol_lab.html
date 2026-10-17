@@ -82,7 +82,7 @@
 </section>
 
 <section class="panel" id="browser-plugins">
-<h2>🧩 Browser plugins · Switch toolbox</h2>
+<h2>🧩 Browser plugins · Switch toolbox</h2><span class="pill ok">Added 2026-10-17</span>
 <p>These are JavaScript modules that run inside this GitHub Pages site. No install required. They analyze saved data, keep a local notebook, and test browser access to compatible peripherals. They do not pretend to be a Nintendo Switch client.</p>
 <div class="grid">
 <div class="card"><h3>Module registry</h3><table><thead><tr><th>Module</th><th>Browser status</th><th>Job</th></tr></thead><tbody>
@@ -188,7 +188,7 @@ Final label: NOT VERIFIED until Gate E passes</pre>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-function bytesFromHex(s){const raw=s.replace(/0x/gi,'');if(!/^[0-9a-f\\s,:;_\\-]*$/i.test(raw))throw Error('Input contains non-hex text. Use hex bytes and separators only.');const cleaned=raw.replace(/[\\s,:;_\\-]/g,'');if(cleaned.length%2)throw Error('Hex input has an odd number of nibbles.');if(!cleaned.length)throw Error('Enter at least one byte.');return Uint8Array.from(cleaned.match(/.{2}/g),x=>parseInt(x,16));}
+function bytesFromHex(s){const raw=s.replace(/0x/gi,'');if(!/^[0-9a-f\s,:;_\-]*$/i.test(raw))throw Error('Input contains non-hex text. Use hex bytes and separators only.');const cleaned=raw.replace(/[\s,:;_\-]/g,'');if(cleaned.length%2)throw Error('Hex input has an odd number of nibbles.');if(!cleaned.length)throw Error('Enter at least one byte.');return Uint8Array.from(cleaned.match(/.{2}/g),x=>parseInt(x,16));}
 function hex(b){return Array.from(b,x=>x.toString(16).padStart(2,'0')).join(' ')}
 function need(b,n,what){if(b.length<n)throw Error('Truncated input: need at least '+n+' bytes for '+what+', got '+b.length+'.')}
 function u16le(b,o){return b[o]|(b[o+1]<<8)}
