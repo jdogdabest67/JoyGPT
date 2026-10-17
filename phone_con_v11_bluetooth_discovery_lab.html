@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phone-Con v11: Bluetooth Discovery Lab</title>
+<style>
+:root{color-scheme:dark}body{font-family:system-ui,sans-serif;max-width:760px;margin:auto;padding:18px;background:#10131b;color:#f3f5ff}h1{font-size:1.7rem}p,li{line-height:1.5}.card{background:#1d2330;border:1px solid #384258;border-radius:14px;padding:15px;margin:14px 0}button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 15px;margin:5px 5px 5px 0;background:#b5f36b;color:#17210c}button.secondary{background:#d6dcf0;color:#151a27}#log{white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:.9rem;background:#080a10;padding:12px;border-radius:10px;min-height:90px}.muted{color:#b7c0d4}.ok{color:#b5f36b}.warn{color:#ffd28a}
+</style>
+</head>
+<body>
+<h1>📡 Phone-Con v11: Bluetooth Discovery Lab</h1>
+<p>Goal: test what this browser can request, without pretending a browser page can turn the phone into a controller.</p>
+<div class="card">
+<h2>Test A: Web Bluetooth support</h2>
+<p id="support">Checking browser capability…</p>
+<button id="scan">Try Bluetooth device picker</button>
+<p class="muted">This uses the browser's standard Bluetooth picker. It may be unavailable on Android Chrome, may require HTTPS, and will only show devices the browser is allowed to discover. It does not send controller inputs.</p>
+</div>
+<div class="card">
+<h2>Test B: Gamepad API</h2>
+<p id="pads">Checking connected gamepads…</p>
+<button class="secondary" id="refresh">Refresh gamepad list</button>
+<p class="muted">This checks controllers already connected to the phone. It does not search for or pair with the Switch 2.</p>
+</div>
+<div class="card">
+<h2>Results</h2><div id="log" role="status">Ready. Run Test A, then Test B.</div>
+<button class="secondary" id="clear">Clear log</button>
+</div>
+<div class="card">
+<h2>What the result means</h2>
+<ul>
+<li><b>Picker opens:</b> browser Bluetooth discovery is available for some devices, not proof that Switch 2 accepts a phone connection.</li>
+<li><b>API unavailable / error:</b> this browser can't run this test. It does not prove Bluetooth hardware is absent.</li>
+<li><b>No gamepads:</b> the phone browser sees no gamepad input devices. This is separate from Bluetooth discovery.</li>
+</ul>
+<p class="warn">Safety note: do not change developer settings or install apps for this test. Cancel the picker if the Switch 2 does not appear.</p>
+</div>
+<script>
+const logEl=document.getElementById('log');
+function log(s){logEl.textContent += '\n'+new Date().toLocaleTimeString()+'  '+s;}
+const bt=('bluetooth' in navigator);
+document.getElementById('support').textContent=bt?'navigator.bluetooth exists in this browser.':'Web Bluetooth is unavailable in this browser.';
+log(bt?'Web Bluetooth API detected.':'Web Bluetooth API not detected.');
+async function pads(){try{if(!navigator.getGamepads){document.getElementById('pads').textContent='Gamepad API unavailable.';log('Gamepad API unavailable.');return;}const list=[...navigator.getGamepads()].filter(Boolean);document.getElementById('pads').textContent=list.length?list.map((p,i)=>'Gamepad '+i+': '+p.id+' ('+p.buttons.length+' buttons, '+p.axes.length+' axes)').join('\n'):'No gamepads visible to this page.';log(list.length?'Gamepad count: '+list.length:'No gamepads visible.');}catch(e){document.getElementById('pads').textContent='Could not read gamepads: '+e.message;log('Gamepad error: '+e.message);}}
+document.getElementById('scan').addEventListener('click',async()=>{if(!navigator.bluetooth){log('STOP: Web Bluetooth unavailable; no picker can be opened.');return;}try{log('Opening standard Bluetooth device picker…');const d=await navigator.bluetooth.requestDevice({acceptAllDevices:true});log('Picker selected device: '+(d.name||'(unnamed device)')+'. This is discovery only, not a controller connection.');}catch(e){log('Picker result: '+e.name+(e.message?': '+e.message:''));}});
+document.getElementById('refresh').addEventListener('click',pads);
+document.getElementById('clear').addEventListener('click',()=>{logEl.textContent='Log cleared.';});
+window.addEventListener('gamepadconnected',e=>log('Gamepad connected: '+e.gamepad.id));
+window.addEventListener('gamepaddisconnected',e=>log('Gamepad disconnected: '+e.gamepad.id));
+pads();
+</script>
+</body>
+</html>
