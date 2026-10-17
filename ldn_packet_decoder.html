@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101521">
+<title>JoyGPT | Documented Packet Decoder</title>
+<style>
+:root{color-scheme:dark;--bg:#101521;--panel:#1a2232;--panel2:#151d2b;--line:#35435a;--text:#f1f4fb;--muted:#b4bfd2;--cyan:#64e2dd;--lime:#c7f36b;--orange:#ffc779;--red:#ff8796;--blue:#8ebdff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 8% 0%,#20384b 0,transparent 34%),var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1050px;margin:auto;padding:18px 14px 56px}.hero,.card{border:1px solid var(--line);border-radius:17px;padding:16px;background:var(--panel);box-shadow:0 8px 28px #0002}.hero{padding:23px 20px;background:linear-gradient(135deg,#1c3044,#171b2b 70%);margin-bottom:14px}.kicker{font-size:.76rem;letter-spacing:.15em;color:var(--cyan);font-weight:850;text-transform:uppercase}.hero h1{font-size:clamp(2rem,7vw,3.1rem);line-height:1.02;letter-spacing:-.045em;margin:9px 0 12px}.muted,.sub{color:var(--muted)}.grid{display:grid;grid-template-columns:1fr;gap:14px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}label{display:block;font-weight:750;margin:12px 0 6px}select,textarea,input,button{font:inherit;color:var(--text);background:#101827;border:1px solid #465772;border-radius:10px;padding:10px;width:100%}textarea{min-height:155px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9rem;resize:vertical}button{width:auto;cursor:pointer;font-weight:800;background:#23374b}button.primary{background:#174f55;border-color:#3d9a9c}button:focus,select:focus,textarea:focus{outline:2px solid var(--cyan);outline-offset:2px}.row button{flex:1}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:.78rem;color:var(--muted)}.good{color:var(--lime)}.warn{color:var(--orange)}.bad{color:var(--red)}.result{margin-top:12px}.field{display:grid;grid-template-columns:minmax(130px, .8fr) 1fr;gap:8px;border-top:1px solid var(--line);padding:9px 0}.field:first-child{border-top:0}.field b{overflow-wrap:anywhere}.field code{overflow-wrap:anywhere;color:#d7e6ff}.sectionTitle{font-size:1.1rem;margin:0 0 8px}.note{padding:11px 12px;background:var(--panel2);border-left:3px solid var(--orange);border-radius:8px;margin:10px 0}.sources a{color:var(--cyan);overflow-wrap:anywhere}.small{font-size:.88rem}.unknown{color:var(--orange);font-weight:750}.status{padding:9px 11px;border-radius:9px;background:#101827;margin-top:10px;overflow-wrap:anywhere}.two{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.grid{grid-template-columns:1.05fr .95fr}.two{grid-template-columns:1fr 1fr}.card{padding:19px}}
+</style>
+</head>
+<body><main>
+<section class="hero">
+<div class="kicker">JoyGPT · research build</div>
+<h1>Documented Packet Decoder</h1>
+<p>Decode only packet layouts with a published format. Unknown and version-mismatched fields stay marked <strong>UNKNOWN</strong>. This tool parses pasted hex locally in your browser; it does not scan, transmit, join, decrypt, or authenticate to any console.</p>
+<div class="row"><span class="pill">offline parser</span><span class="pill">bounds checked</span><span class="pill">no network calls</span></div>
+</section>
+<section class="card">
+<h2 class="sectionTitle">1 · Choose a documented format</h2>
+<label for="format">Packet format</label>
+<select id="format">
+<option value="ldn">LDN vendor-specific advertisement frame · published format</option>
+<option value="lan59">Pia LAN browse request · documented Pia 5.9–5.45 layout (Splatoon 2 Pia 5.9.3 family)</option>
+<option value="s3unknown">Splatoon 3 v11.3.0 / Pia 6.32.3 LAN browse format · not fully documented</option>
+<option value="raw">Raw hex inspection · no assumptions</option>
+</select>
+<div class="note"><strong>Version guard:</strong> Splatoon 2's update history records Pia 5.9.3 at v5.2.0. Splatoon 3's history records Pia 6.32.3 at v10.0.0, with no SDK version update noted for v11.3.0. That does not prove every packet field or LDN mode is unchanged in either game.</div>
+<label for="hex">Packet bytes (hexadecimal)</label>
+<textarea id="hex" spellcheck="false" placeholder="Paste bytes as hex, e.g. 7f 00 22 aa 04 00 01 01 ..."></textarea>
+<div class="row" style="margin-top:10px"><button class="primary" id="decode">Decode packet</button><button id="sample">Load safe example</button><button id="clear">Clear</button></div>
+<div id="status" class="status" role="status">Ready. Sample packets are synthetic and are labeled as examples, not captured console traffic.</div>
+</section>
+<section class="grid" style="margin-top:14px">
+<section class="card"><h2 class="sectionTitle">2 · Decode results</h2><div id="results" class="result muted">Choose a format and decode a packet to see validated fields.</div></section>
+<section class="card"><h2 class="sectionTitle">3 · Version facts & unknowns</h2><div id="facts" class="result"></div></section>
+</section>
+<section class="card sources" style="margin-top:14px">
+<h2 class="sectionTitle">Source notes</h2>
+<ul>
+<li><a href="https://github.com/kinnay/NintendoClients/wiki/LDN-Protocol" target="_blank" rel="noreferrer">NintendoClients: LDN Protocol</a> · advertisement frame and documented payload layouts.</li>
+<li><a href="https://github.com/kinnay/NintendoClients/wiki/LAN-Protocol" target="_blank" rel="noreferrer">NintendoClients: LAN Protocol</a> · browse packet formats and documented Pia-version ranges.</li>
+<li><a href="https://switchbrew.org/wiki/Splatoon_2" target="_blank" rel="noreferrer">Switchbrew: Splatoon 2</a> · Pia version history.</li>
+<li><a href="https://switchbrew.org/wiki/Splatoon_3" target="_blank" rel="noreferrer">Switchbrew: Splatoon 3</a> · Pia 6.32.3 and v11.3.0 SDK notes.</li>
+</ul>
+<p class="muted small">Safety/correctness boundary: this decoder deliberately does not implement decryption, authentication challenge responses, key derivation, session joining, or packet transmission. A recognized general LDN frame is not proof of a Splatoon-specific packet or a successful game connection.</p>
+</section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const fmtBytes = b => b.map(x=>x.toString(16).padStart(2,'0')).join(' ');
+function parseHex(s){
+  const clean=s.replace(/0x/gi,'').replace(/[,;:\n\r\t]/g,' ').trim();
+  if(!clean) return [];
+  const parts=clean.split(/\s+/);
+  const joined=parts.join('');
+  if(parts.length===1 && joined.length>2 && joined.length%2===0){
+    if(!/^[0-9a-f]+$/i.test(joined)) throw Error('Hex contains invalid characters.');
+    return joined.match(/.{2}/g).map(x=>parseInt(x,16));
+  }
+  if(parts.some(p=>! /^[0-9a-f]{2}$/i.test(p))) throw Error('Use byte pairs like “7f 00 22 aa” or one continuous even-length hex string.');
+  return parts.map(x=>parseInt(x,16));
+}
+function need(b,o,n,label){if(o<0||n<0||o+n>b.length) throw Error(label+': packet too short (needs bytes '+o+'–'+(o+n-1)+', received '+b.length+' bytes).');}
+function u8(b,o,l){need(b,o,1,l);return b[o]}
+function u16le(b,o,l){need(b,o,2,l);return b[o]|(b[o+1]<<8)}
+function u32le(b,o,l){need(b,o,4,l);return (b[o]+b[o+1]*256+b[o+2]*65536+b[o+3]*16777216)>>>0}
+function hex(b,o,n,l){need(b,o,n,l);return fmtBytes(b.slice(o,o+n))}
+function add(out,k,v){out.push([k,v])}
+function render(fields){return fields.map(([k,v])=>'<div class="field"><b>'+esc(k)+'</b><code>'+esc(String(v))+'</code></div>').join('')}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function decode(){
+ let b; try{b=parseHex($('hex').value)}catch(e){$('status').innerHTML='<span class="bad">'+esc(e.message)+'</span>';return}
+ const mode=$('format').value, out=[];
+ if(!b.length){$('status').innerHTML='<span class="warn">Paste packet bytes first.</span>';return}
+ try{
+  add(out,'Input length',b.length+' bytes');
+  add(out,'Input bytes (first 64)',fmtBytes(b.slice(0,64))+(b.length>64?' …':''));
+  if(mode==='raw'){
+    add(out,'Interpretation','Raw bytes only; no protocol assumptions made.');
+    add(out,'Remaining bytes','UNKNOWN · no selected documented format');
+  } else if(mode==='s3unknown'){
+    add(out,'Target','Splatoon 3 v11.3.0 · Pia 6.32.3');
+    add(out,'LAN browse layout','UNKNOWN · public LAN documentation lists 6.16–6.30 then 7.2; 6.32.3 is not a documented browse-request layout in that table.');
+    add(out,'Safe decoder behavior','No version-inaccurate field offsets guessed.');
+    add(out,'LDN advertisement','Choose the general LDN advertisement decoder separately if this input is an LDN vendor-specific advertisement frame.');
+  } else if(mode==='lan59'){
+    add(out,'Format','Pia LAN browse request, documented 5.9–5.45 layout');
+    add(out,'Pia packet type',u8(b,0,'Packet type')+' (expected 0 = browse request)');
+    const size=u32le(b,1,'Search criteria size'); add(out,'Search criteria size',size+' bytes'+(size===0x23a?' (documented expected size)':' (does not match documented 0x23A)'));
+    need(b,5,0x23a,'LanSessionSearchCriteria');
+    add(out,'Network ID (8 bytes)',hex(b,5,8,'Network ID'));
+    add(out,'Property data + padding (0x200 bytes)',hex(b,13,0x200,'Property data region')+' · bytes shown, structure not fully decoded');
+    add(out,'Property data size',u32le(b,5+0x208,'Property data size'));
+    add(out,'Matchmake key (8 bytes)',hex(b,5+0x20c,8,'Matchmake key'));
+    add(out,'Current stations',u16le(b,5+0x214,'Current stations'));
+    add(out,'Maximum stations',u16le(b,5+0x216,'Maximum stations'));
+    add(out,'Is open',u8(b,5+0x218,'Is open')+' (meaning documented; valid values not validated here)');
+    add(out,'Has player limit',u8(b,5+0x219,'Player limit flag'));
+    add(out,'Current players',u8(b,5+0x21a,'Current players'));
+    add(out,'Host address / StationAddress (0x12 bytes)',hex(b,5+0x21b,0x12,'Host address')+' · subfields UNKNOWN');
+    if(b.length>=5+0x23a+0x12a) add(out,'Crypto challenge',hex(b,5+0x23f,0x12a,'Crypto challenge')+' · opaque bytes; not decoded');
+    else add(out,'Crypto challenge','UNKNOWN / not fully present: documented layout may append 0x12A bytes after search criteria.');
+    add(out,'Version applicability','Pia 5.9–5.45 layout; Splatoon 2 Pia 5.9.3 belongs to this documented range. This does not prove a pasted packet came from Splatoon 2.');
+  } else if(mode==='ldn'){
+    add(out,'Format','Nintendo vendor-specific LDN advertisement');
+    add(out,'Category',u8(b,0,'Category')+' (documented expected 127)');
+    add(out,'OUI',hex(b,1,3,'OUI')+' (documented expected 00 22 aa)');
+    add(out,'Protocol ID',u8(b,4,'Protocol ID')+' (documented expected 4 = LDN)');
+    add(out,'Header padding',u8(b,5,'Header padding'));
+    add(out,'Packet type',u16le(b,6,'Packet type')+' (documented 257 = advertisement)');
+    add(out,'Reserved field',hex(b,8,2,'Reserved field'));
+    add(out,'Header padding',hex(b,10,2,'Header padding'));
+    const base=12;
+    add(out,'Session info (32 bytes)',hex(b,base,32,'Session info')+' · opaque');
+    add(out,'LDN version',u8(b,base+32,'LDN version'));
+    const enc=u8(b,base+33,'Encryption type');
+    add(out,'Encryption type',enc+' ('+({1:'plain',2:'AES-CTR',3:'AES-GCM'}[enc]||'UNKNOWN / undocumented value')+')');
+    const sz=u16le(b,base+34,'Advertisement data size'); add(out,'Advertisement data size',sz+' bytes');
+    add(out,'Nonce',hex(b,base+36,4,'Nonce')+' · encryption-specific meaning');
+    if(enc===1){
+      add(out,'SHA-256 field',hex(b,base+40,32,'SHA-256 field')+' · checksum not validated');
+      add(out,'Advertisement data',sz<=b.length-(base+72)?hex(b,base+72,sz,'Advertisement data'):'UNKNOWN / truncated: declared size exceeds available bytes');
+      add(out,'Nested advertisement fields','Not decoded automatically: offsets vary by documented encryption/layout variant, and Splatoon-specific application data is not validated.');
+    }else if(enc===2){
+      add(out,'Encrypted content','AES-CTR: hash and advertisement data are encrypted in this documented variant. Decoder leaves them opaque.');
+    }else if(enc===3){
+      add(out,'Authenticated/encrypted content','AES-GCM: documented layout uses a 16-byte MAC followed by encrypted advertisement data. Decoder leaves it opaque.');
+    }else add(out,'Payload interpretation','UNKNOWN: encryption type not documented by selected reference.');
+    add(out,'Splatoon application data','UNKNOWN · generic LDN layout does not identify or validate the game-specific payload.');
+  }
+  $('results').innerHTML=render(out);
+  $('status').innerHTML='<span class="good">Decoded with bounds checks.</span> This is a format interpretation, not proof of a live capture or a valid game packet.';
+ }catch(e){$('results').innerHTML='';$('status').innerHTML='<span class="bad">Could not decode safely: '+esc(e.message)+'</span>'}
+}
+function facts(){
+ const rows=[
+ ['Splatoon 2','Switchbrew records Pia 5.9.3 at update 5.2.0. Version-matched LAN browse layout exists for Pia 5.9–5.45.','Confirmed version history + documented general format; not a captured Splatoon packet.'],
+ ['Splatoon 3 v11.3.0','Switchbrew records Pia 6.32.3 in 10.0.0; 11.3.0 notes no SDK version update.','Confirmed version history; exact LDN protocol selection and game-specific payload fields UNKNOWN.'],
+ ['Pia 6.32.3 LAN browse','The LAN protocol table lists 6.16–6.30, then 7.2.','UNKNOWN / gap in the public documented table. Decoder intentionally refuses to apply the 6.16–6.30 layout to 6.32.3.'],
+ ['LDN advertisement','Generic vendor-specific advertisement header and encryption-type branches are documented.','Decoder parses documented outer fields only; encrypted payload, auth, and Splatoon application data remain opaque.']
+ ];
+ $('facts').innerHTML=rows.map(r=>'<div class="note"><strong>'+esc(r[0])+'</strong><p>'+esc(r[1])+'</p><p class="small muted">'+esc(r[2])+'</p></div>').join('');
+}
+$('decode').addEventListener('click',decode);
+$('clear').addEventListener('click',()=>{$('hex').value='';$('results').innerHTML='';$('status').textContent='Cleared.'});
+$('sample').addEventListener('click',()=>{
+ const mode=$('format').value;
+ if(mode==='ldn'){
+  const b=new Array(12+40).fill(0);b[0]=127;b[1]=0;b[2]=34;b[3]=170;b[4]=4;b[6]=1;b[7]=1;b[12+32]=3;b[12+33]=3;
+  $('hex').value=fmtBytes(b);$('status').textContent='Loaded synthetic LDN header-only example. It is not a real captured advertisement and is intentionally truncated after common metadata.';
+ }else if(mode==='lan59'){
+  const b=new Array(5+0x23a).fill(0);b[0]=0;b[1]=0x3a;b[2]=2;b[3]=0;b[4]=0;
+  $('hex').value=fmtBytes(b);$('status').textContent='Loaded synthetic Pia 5.9–5.45 browse-request fixture. All-zero fields are placeholders, not a real room.';
+ }else{
+  $('hex').value='00 01 02 03 04 05';$('status').textContent='Loaded synthetic raw bytes. No protocol claims will be made.';
+ }
+});
+$('format').addEventListener('change',()=>{ $('status').textContent='Format changed. Choose a sample or paste bytes, then decode.';});
+facts();
+</script>
+</body></html>
