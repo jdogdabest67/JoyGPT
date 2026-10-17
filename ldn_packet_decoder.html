@@ -101,7 +101,7 @@ function decode(){
     add(out,'Has player limit',u8(b,5+0x219,'Player limit flag'));
     add(out,'Current players',u8(b,5+0x21a,'Current players'));
     add(out,'Host address / StationAddress (0x12 bytes)',hex(b,5+0x21b,0x12,'Host address')+' · subfields UNKNOWN');
-    if(b.length>=5+0x23a+0x12a) add(out,'Crypto challenge',hex(b,5+0x23f,0x12a,'Crypto challenge')+' · opaque bytes; not decoded');
+    if(b.length>=5+0x23a+0x12a) add(out,'Crypto challenge',hex(b,0x23f,0x12a,'Crypto challenge')+' · opaque bytes; not decoded');
     else add(out,'Crypto challenge','UNKNOWN / not fully present: documented layout may append 0x12A bytes after search criteria.');
     add(out,'Version applicability','Pia 5.9–5.45 layout; Splatoon 2 Pia 5.9.3 belongs to this documented range. This does not prove a pasted packet came from Splatoon 2.');
   } else if(mode==='ldn'){
