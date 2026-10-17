@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#09111f"><title>Phone-Con v5 | Maximum Device Lab</title>
+<meta name="theme-color" content="#09111f"><title>Phone-Con v6 | Controller Bridge Lab</title>
 <style>
 :root{color-scheme:dark;--bg:#07101d;--panel:#12223a;--line:#304865;--text:#edf6ff;--muted:#a6bdd7;--blue:#32c4ff;--green:#65efab;--gold:#ffd58b;--red:#ff9999}
 *{box-sizing:border-box}body{margin:0;padding:12px;background:radial-gradient(ellipse at top,#203858,var(--bg) 70%);color:var(--text);font:15px system-ui,-apple-system,sans-serif;min-height:100vh}
@@ -15,7 +15,17 @@ button{background:#203b5c;border:1px solid #557597;color:var(--text);border-radi
 .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.stick-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}.stick{width:min(37vw,170px);height:min(37vw,170px);min-width:124px;min-height:124px;max-width:170px;max-height:170px;border-radius:50%;background:radial-gradient(circle,#233d5d,#0b1627);border:2px solid #557597;position:relative;touch-action:none;user-select:none}.stick:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#4f6b8b66}.stick:after{content:"";position:absolute;top:50%;left:0;right:0;height:1px;background:#4f6b8b66}.knob{position:absolute;left:50%;top:50%;width:38%;height:38%;border-radius:50%;background:#2588bd;border:2px solid #91ddff;box-shadow:0 2px 12px #0008;transform:translate(-50%,-50%);pointer-events:none}.stickname{font-size:12px;color:var(--muted);font-weight:800}.pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:12px}.pad button{min-height:46px;padding:8px 2px}.small{font-size:12px}.status{font-weight:850;color:var(--blue)}a{color:#85dfff}
 </style></head>
 <body><main>
-<header class="hero"><div class="title">📱 PHONE-CON <span style="color:var(--blue)">v5</span></div><div class="subtitle">MAXIMUM DEVICE LAB · USB · Bluetooth · HID · Serial · MIDI · Gamepads · Motion</div><div class="callout"><b>Mission:</b> expose every useful browser-side path and report what the phone can actually see. All scans are user-triggered. This page never uploads diagnostics, never sends USB/HID/MIDI/serial commands, and cannot make the phone advertise itself as a Switch controller.</div></header>
+<header class="hero"><div class="title">📱 PHONE-CON <span style="color:var(--blue)">v6</span></div><div class="subtitle">MAXIMUM DEVICE LAB · USB · Bluetooth · HID · Serial · MIDI · Gamepads · Motion</div><div class="callout"><b>Mission:</b> expose every useful browser-side path and report what the phone can actually see. All scans are user-triggered. This page never uploads diagnostics, never sends USB/HID/MIDI/serial commands, and cannot make the phone advertise itself as a Switch controller.</div></header>
+
+
+<section class="panel"><h2>🎮 Android → Switch controller bridge</h2>
+<p class="muted">Want the phone itself to act like a real Switch controller? That needs Android to advertise a Bluetooth game-controller device. A webpage cannot do that, so this is an external-app guide rather than fake “connected!” buttons.</p>
+<div class="grid">
+<div class="card"><b>Joy-Con Droid</b><p class="muted">A separate Android app project that aims to emulate Joy-Con/Pro Controller input, with Switch 2 support listed by its developers.</p><p><a href="https://github.com/TeamJCD/JoyConDroidDocs" target="_blank" rel="noopener">Read the official compatibility notes</a></p><p><a href="https://github.com/TeamJCD/JoyConDroid/releases/latest" target="_blank" rel="noopener">Official releases page</a></p></div>
+<div class="card"><b>Important compatibility warning</b><p class="muted">This is not a one-tap guaranteed solution. The project documentation says modern Switch firmware may require rooting Android and changing Bluetooth system behavior. Rooting can weaken security, break apps, or damage the phone’s software if done incorrectly, so this lab does not guide you through that.</p></div>
+</div>
+<div class="callout"><b>What this page can do:</b> test browser APIs and simulate touch controls locally. <b>What it cannot do:</b> turn those controls into a real Bluetooth controller or pair itself with the Switch 2.</div>
+</section>
 
 <section class="panel"><h2>🛰️ API radar</h2><div id="radar" class="grid"></div><div id="env" class="readout">Collecting environment info…</div><div class="row"><button id="refresh">Refresh all safe checks</button><button id="export">Download diagnostics JSON</button><button id="copyReport">Copy diagnostics</button></div><div class="muted">“Available” means the API exists. It does not guarantee compatibility with a particular device or that a webpage can act as a controller peripheral.</div></section>
 
@@ -42,7 +52,7 @@ button{background:#203b5c;border:1px solid #557597;color:var(--text);border-radi
 <div class="pad" id="pad"><button data-k="UP">▲ UP</button><button data-k="LEFT">◀ LEFT</button><button data-k="DOWN">▼ DOWN</button><button data-k="RIGHT">RIGHT ▶</button><button data-k="A">A</button><button data-k="B">B</button><button data-k="X">X</button><button data-k="Y">Y</button><button data-k="L">L</button><button data-k="R">R</button><button data-k="ZL">ZL</button><button data-k="ZR">ZR</button><button data-k="PLUS">＋</button><button data-k="MINUS">－</button><button data-k="L3">L3</button><button data-k="R3">R3</button></div>
 <div class="row"><button id="release">Release all</button><button id="copyState">Copy controller state JSON</button></div><div id="state" class="readout"></div></section>
 
-<footer class="muted">Phone-Con v5 · No network calls from this page · User-controlled device permissions · Read-only hardware diagnostics · <a href="https://developer.chrome.com/docs/capabilities/usb">WebUSB</a> · <a href="https://developer.chrome.com/docs/capabilities/serial">Web Serial</a> · <a href="https://github.com/whatwg/hid">WebHID platform status</a></footer>
+<footer class="muted">Phone-Con v6 · No network calls from this page · User-controlled device permissions · Read-only hardware diagnostics · <a href="https://developer.chrome.com/docs/capabilities/usb">WebUSB</a> · <a href="https://developer.chrome.com/docs/capabilities/serial">Web Serial</a> · <a href="https://github.com/whatwg/hid">WebHID platform status</a></footer>
 </main>
 <script>
 (()=>{'use strict';
