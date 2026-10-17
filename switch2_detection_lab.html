@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08111f">
+<title>Phone-Con | Switch 2 Detection Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#08111f;--panel:#14253c;--line:#35516f;--text:#eff7ff;--muted:#a9bfd6;--blue:#55ceff;--green:#72f0b0;--gold:#ffd48a}
+*{box-sizing:border-box}body{margin:0;padding:16px;background:radial-gradient(ellipse at top,#203b5b,var(--bg) 70%);color:var(--text);font:16px system-ui,sans-serif}main{max-width:760px;margin:auto;display:grid;gap:12px}.panel{background:#14253cf2;border:1px solid var(--line);border-radius:16px;padding:16px}.title{font-size:clamp(27px,7vw,40px);font-weight:950;letter-spacing:-1px}h2{font-size:18px;margin:0 0 8px}.muted{color:var(--muted);font-size:13px;line-height:1.5}button{background:#24496b;color:var(--text);border:1px solid #6286a7;border-radius:11px;padding:12px 14px;font:inherit;font-weight:800;touch-action:manipulation}.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.out{white-space:pre-wrap;overflow-wrap:anywhere;background:#07101b;border-radius:10px;padding:12px;margin-top:10px;font:13px/1.55 ui-monospace,monospace}.callout{border-left:3px solid var(--gold);background:#302a1c;padding:10px;border-radius:0 9px 9px 0;font-size:13px;line-height:1.5}a{color:var(--blue)}
+</style>
+</head>
+<body><main>
+<header class="panel"><div class="title">📡 SWITCH 2 DETECTION LAB</div><p class="muted">Phone-Con experiment 01 · honest signals only</p><div class="callout"><b>Important:</b> A browser can only report devices exposed to its APIs. The Switch 2 may not appear in a phone's Bluetooth picker, and this page cannot force the console to advertise itself or prove that an arbitrary nearby device is a Switch 2.</div></header>
+<section class="panel"><h2>1. Bluetooth Low Energy scan</h2><p class="muted">Opens Android/Chrome's device picker for BLE devices. This is a test of what the browser can see, not a full Bluetooth scan. Do not select an unfamiliar device.</p><div class="row"><button id="scan">Open BLE device picker</button></div><div id="ble" class="out">Not tested yet.</div></section>
+<section class="panel"><h2>2. Connected controller check</h2><p class="muted">Checks whether Android exposes any connected gamepad to this webpage. If you connect a controller to the phone, press a button and refresh this check.</p><div class="row"><button id="pads">Check connected gamepads</button></div><div id="gamepads" class="out">Not checked yet.</div></section>
+<section class="panel"><h2>3. What did we learn?</h2><div id="summary" class="out">Run either test above. Results stay on this page.</div><p class="muted">A Bluetooth picker result is not proof of Switch 2 compatibility. A gamepad result means the browser sees a controller connected to the phone, not that the phone sees the console.</p></section>
+</main>
+<script>
+const ble=document.querySelector('#ble'),pads=document.querySelector('#gamepads'),summary=document.querySelector('#summary');
+document.querySelector('#scan').addEventListener('click',async()=>{
+ if(!('bluetooth' in navigator)){ble.textContent='NOT AVAILABLE: Web Bluetooth is not exposed in this browser.\nTry Chrome/Chrome Beta over HTTPS, but support can vary by Android build.';summary.textContent='BLE scan unavailable. This does not mean the Switch 2 is absent; this browser has no BLE picker API.';return}
+ try{
+  const d=await navigator.bluetooth.requestDevice({acceptAllDevices:true});
+  ble.textContent='Browser returned a device:\nName: '+(d.name||'(name hidden / unavailable)')+'\nID: '+d.id+'\nConnected to GATT: '+(d.gatt?.connected?'yes':'no')+'\n\nThis only proves the browser picker exposed this BLE device. It does not prove it is a Switch 2.';
+  summary.textContent=(d.name||'An unnamed BLE device')+' was selectable. Record the exact displayed name if you think it is relevant; do not assume it is the console.';
+ }catch(e){ble.textContent='No device selected or scan failed.\n'+e.name+': '+e.message;summary.textContent='No BLE device was selected. The console may not be discoverable through Web Bluetooth, or the browser/OS may block this scan.'}
+});
+function checkPads(){
+ if(!navigator.getGamepads){pads.textContent='NOT AVAILABLE: navigator.getGamepads() is missing.';return}
+ try{
+  const list=Array.from(navigator.getGamepads()).filter(Boolean);
+  if(!list.length){pads.textContent='No gamepads currently exposed to this page.\n\nIf you connected a controller to the phone, press a button and check again. Android/browser support may vary.';return}
+  pads.textContent=list.map((g,i)=>'Gamepad '+(i+1)+'\nID: '+(g.id||'(no ID)')+'\nIndex: '+g.index+'\nButtons: '+g.buttons.length+'\nAxes: '+g.axes.length+'\nMapping: '+(g.mapping||'(none)')).join('\n\n');
+ }catch(e){pads.textContent='Gamepad check failed: '+e.name+': '+e.message}
+}
+document.querySelector('#pads').addEventListener('click',checkPads);
+window.addEventListener('gamepadconnected',checkPads);
+window.addEventListener('gamepaddisconnected',checkPads);
+</script></body></html>
