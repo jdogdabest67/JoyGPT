@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phone-Con Wi-Fi Lab v1</title>
+<style>
+:root{color-scheme:dark;--bg:#10131c;--panel:#1b2130;--line:#39445b;--ink:#f5f7ff;--muted:#aeb8cf;--lime:#c8ff52;--blue:#80d8ff;--pink:#ff83c8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#26334c 0,#10131c 60%);color:var(--ink);font:16px system-ui,sans-serif;padding:18px;max-width:850px;margin:auto}
+h1{margin:0;font-size:clamp(1.8rem,7vw,2.8rem)}.sub{color:var(--muted);line-height:1.5}.tag{color:var(--lime);font-weight:800;letter-spacing:.1em;font-size:.75rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}.card h2{font-size:1.05rem;margin:0 0 8px}.status{font-size:1.2rem;font-weight:800;margin:8px 0}.muted{color:var(--muted);font-size:.9rem;line-height:1.45}.ok{color:var(--lime)}.bad{color:#ff9b9b}.info{color:var(--blue)}
+button,input{font:inherit;border-radius:10px;padding:11px 13px;border:1px solid var(--line);width:100%;margin-top:8px;background:#111725;color:var(--ink)}button{background:var(--lime);color:#151b0a;border:0;font-weight:800;cursor:pointer}button.secondary{background:#303c55;color:var(--ink)}.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b0e15;padding:12px;border-radius:10px;min-height:60px;color:#d8e4ff;font-size:.85rem}.warning{border-left:4px solid var(--pink);padding:10px 12px;background:#2a1c2b;border-radius:8px;line-height:1.45}.tiny{font-size:.78rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="tag">JOYGPT / PHONE-CON</div>
+<h1>Wi-Fi Lab <span style="color:var(--lime)">v1</span></h1>
+<p class="sub">Network diagnostics, not pretend-console-detection. This lab checks this phone's browser connection and whether it can reach known web endpoints. It cannot prove that the Switch 2 is reachable.</p>
+<div class="grid">
+<section class="card"><h2>1 · Browser network status</h2><div id="online" class="status">Checking…</div><div id="onlineDetail" class="muted">navigator.onLine is only a hint, not a full internet test.</div></section>
+<section class="card"><h2>2 · Connection hints</h2><div id="conn" class="status">Reading…</div><div id="connDetail" class="muted">Some browsers don't expose connection details.</div></section>
+<section class="card"><h2>3 · Reach this website</h2><div id="self" class="status">Not tested yet</div><div id="selfDetail" class="muted">Checks whether this page's own site responds.</div><button id="selfBtn">Test this site</button></section>
+<section class="card"><h2>4 · Reach public internet</h2><div id="internet" class="status">Not tested yet</div><div id="internetDetail" class="muted">A small no-cache request to a public endpoint.</div><button id="internetBtn">Test internet</button></section>
+</div>
+<section class="card">
+<h2>5 · Try a local-network address (optional)</h2>
+<p class="muted">If you already know the address of a device on your own home network that provides a web page, you can test it here. This does not scan the network. A failure can mean browser security restrictions, no web server, or the device not responding.</p>
+<input id="localUrl" type="url" placeholder="http://192.168.1.1/" autocomplete="url" spellcheck="false">
+<button id="localBtn" class="secondary">Test entered address</button>
+<div id="localResult" class="status">Waiting for an address</div>
+<div id="localDetail" class="muted">Don't enter passwords or private tokens in this field.</div>
+</section>
+<section class="card">
+<h2>Live log</h2><div class="row"><button id="refreshBtn" class="secondary">Refresh status</button><button id="clearBtn" class="secondary">Clear log</button></div><pre id="log">Phone-Con Wi-Fi Lab started.</pre>
+<p class="tiny">Privacy: this page doesn't ask for location, scan devices, or send your message text. Tests contact only the page's own site, a public connectivity endpoint, or the URL you explicitly enter.</p>
+</section>
+<div class="warning"><b>Important:</b> same Wi-Fi doesn't automatically let a webpage message a Switch 2. A successful test here means only that a particular web endpoint responded. The console still needs a supported receiver/protocol for actual phone-to-console messages.</div>
+<script>
+const $=id=>document.getElementById(id);
+function log(s){const t=new Date().toLocaleTimeString();$('log').textContent='['+t+'] '+s+'\n'+$('log').textContent;}
+function set(id,title,detail,kind='info'){ $(id).textContent=title; $(id).className='status '+kind; const d=$(id+'Detail'); if(d)d.textContent=detail; }
+function status(){set('online',navigator.onLine?'Browser reports ONLINE':'Browser reports OFFLINE',navigator.onLine?'This is only a hint; a request can still fail.':'The browser currently reports no network connection.',navigator.onLine?'ok':'bad');
+ const c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+ if(c){let bits=[];if(c.type)bits.push('type: '+c.type);if(c.effectiveType)bits.push('effective type: '+c.effectiveType);if(c.downlink)bits.push('estimated downlink: '+c.downlink+' Mbps');if(c.rtt)bits.push('estimated RTT: '+c.rtt+' ms');set('conn',c.type||c.effectiveType||'Hints available',bits.join(' · ')||'Browser exposes a connection object, but no readable hints.','info');}
+ else set('conn','Not exposed','This browser does not expose Network Information API details. That is normal.','info');
+ log('Status refreshed; navigator.onLine='+navigator.onLine);}
+async function test(url, id, label, options={}){set(id,'Testing…','Waiting for a response.','info');const start=performance.now();const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),7000);
+ try{const r=await fetch(url,{method:'GET',cache:'no-store',mode:options.mode||'cors',signal:ctrl.signal,redirect:'follow'});const ms=Math.round(performance.now()-start);set(id,'RESPONDED · '+r.status, label+' responded in '+ms+' ms. HTTP '+r.status+'. This does not test Switch 2 connectivity.','ok');log(label+' responded: HTTP '+r.status+' in '+ms+' ms');}
+ catch(e){const ms=Math.round(performance.now()-start);set(id,'No readable response',label+' failed after '+ms+' ms ('+(e.name==='AbortError'?'timed out':e.message||e.name)+'). Browser CORS/security rules can block reading a response even when the device exists.','bad');log(label+' failed: '+(e.message||e.name));}
+ finally{clearTimeout(timer);}}
+$('selfBtn').onclick=()=>test(location.origin+'/?phonecon_ping='+Date.now(),'self','This site');
+$('internetBtn').onclick=()=>test('https://www.gstatic.com/generate_204?phonecon_ping='+Date.now(),'internet','Public connectivity endpoint');
+$('localBtn').onclick=()=>{let raw=$('localUrl').value.trim();if(!raw){set('localResult','Enter an address first','Example format only: http://192.168.1.1/','bad');return;}let u;try{u=new URL(raw);}catch{set('localResult','Invalid URL','Include http:// or https:// and a host/IP address.','bad');return;}if(!['http:','https:'].includes(u.protocol)){set('localResult','Unsupported address','Use an http:// or https:// URL.','bad');return;}set('localResult','Testing…','Attempting one request to the address you entered.','info');const started=performance.now();const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),5000);fetch(u.href,{method:'GET',cache:'no-store',mode:'no-cors',signal:ctrl.signal}).then(()=>{set('localResult','Request dispatched','The browser did not expose the response (no-cors mode). This is NOT proof that the host or page responded.','info');log('Local request dispatched to '+u.origin+'; response opaque/unverified.');}).catch(e=>{set('localResult','Request failed',e.name==='AbortError'?'Timed out.':'Browser/network error: '+(e.message||e.name),'bad');log('Local request failed for '+u.origin+': '+e.name);}).finally(()=>clearTimeout(timer));};
+$('refreshBtn').onclick=status;
+$('clearBtn').onclick=()=>$('log').textContent='Log cleared.';
+window.addEventListener('online',()=>{status();log('Browser fired online event.');});
+window.addEventListener('offline',()=>{status();log('Browser fired offline event.');});
+status();
+</script>
+</body></html>
