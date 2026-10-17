@@ -59,6 +59,27 @@
 <div class="callout"><b>Current practical limit:</b> with only the Galaxy A37 5G, Switch 2, and a normal browser, there is no demonstrated path to transmit LDN action frames. USB file transfer, USB tethering, MIDI, and charging modes do not turn the phone into a second Switch or a raw Wi-Fi radio. This branch stays research-only until suitable hardware and a validated protocol path exist.</div>
 </section>
 \n
+<section class="panel" id="toolbox">
+<h2>🧰 Research toolbox · browser-only tools</h2>
+<p>This adds the useful parts of the projects we found without pretending their code is a ready-made Splatoon plugin. It needs no new hardware, app install, or account.</p>
+<div class="grid">
+<div class="card"><h3>Browser capability check</h3><p class="muted">Checks API availability only. It does not connect to anything or request USB permission.</p>
+<table><tbody>
+<tr><td>Web Serial</td><td id="serial-status">Checking…</td></tr>
+<tr><td>WebUSB</td><td id="usb-status">Checking…</td></tr>
+<tr><td>Web Bluetooth</td><td id="bt-status">Checking…</td></tr>
+<tr><td>Secure context</td><td id="secure-status">Checking…</td></tr>
+</tbody></table>
+<p id="api-note" class="muted">Important: these browser APIs do not expose the phone's built-in Wi-Fi raw action-frame radio. An API being available does not mean an external board or Splatoon client is supported.</p>
+<button id="check-apis" type="button">Check again</button>
+</div>
+<div class="card"><h3>LDN protocol reference</h3><p>Public protocol notes for the vendor-specific action-frame envelope and documented fields.</p><p><a href="https://github.com/kinnay/NintendoClients/wiki/LDN-Protocol" target="_blank" rel="noopener">Open LDN Protocol notes ↗</a></p><span class="pill">Reference, not a plug-in</span></div>
+<div class="card"><h3>LDN library</h3><p>Existing implementation and documentation to inspect for supported host and radio assumptions. It is not automatically runnable inside this static webpage.</p><p><a href="https://github.com/kinnay/LDN" target="_blank" rel="noopener">Open kinnay/LDN ↗</a> · <a href="https://ldn.readthedocs.io/en/latest/" target="_blank" rel="noopener">Documentation ↗</a></p><span class="pill">Host-side project</span></div>
+<div class="card"><h3>Local wireless on PC</h3><p>Research notes about the low-level radio and monitor-mode requirements, useful for deciding what a future capture setup must support.</p><p><a href="https://github.com/kinnay/NintendoClients/wiki/Local-Wireless-Communication-on-PC" target="_blank" rel="noopener">Open PC research notes ↗</a></p><span class="pill">Research guide</span></div>
+<div class="card"><h3>pokeldn external-radio example</h3><p>Shows an external radio/host architecture for certain Pokémon titles. Its supported-game list does not establish Splatoon compatibility; it is not a drop-in client for this project.</p><p><a href="https://github.com/Decryptu/pokeldn" target="_blank" rel="noopener">Open pokeldn ↗</a></p><span class="pill">Architecture example only</span></div>
+</div>
+<div class="callout" style="margin-top:10px"><b>What we can do right now:</b> compare documented protocol facts, inspect user-supplied or saved hex offline, check which browser bridge APIs exist, and record unknowns. What we cannot do from this webpage alone is sniff/transmit raw LDN frames or join a Splatoon room.</div>
+</section>
 <section class="panel" id="radio-checklist">
 <h2>🛠️ 5 · Radio hardware checklist · build 2026-10-17</h2>
 <p><b>This is the new update marker.</b> If this heading appears on the published site, the new HTML reached GitHub Pages. If it does not, the problem is deployment or caching, not the radio code.</p>
@@ -135,4 +156,17 @@ function need(b,n,what){if(b.length<n)throw Error('Truncated input: need at leas
 function u16le(b,o){return b[o]|(b[o+1]<<8)}
 function decode(){try{const b=bytesFromHex($('hex').value),kind=$('kind').value;let out='Input bytes: '+b.length+'\nHex: '+hex(b)+'\n\n';if(kind==='ldn'){need(b,12,'LDN action body header');out+='Format: LDN vendor-specific action body\n';out+='category @0x00: '+b[0]+(b[0]===127?' (documented vendor-specific)':' (not the documented value 127)')+'\n';out+='OUI @0x01..03: '+hex(b.slice(1,4))+(hex(b.slice(1,4))==='00 22 aa'?' (documented Nintendo OUI)':' (does not match documented OUI 00 22 aa)')+'\n';out+='protocol id @0x04: '+b[4]+(b[4]===4?' (LDN)':' (unknown/non-LDN value)')+'\n';out+='padding @0x05: '+b[5]+'\n';out+='packet type @0x06..07 LE: '+u16le(b,6)+' (257 = advertisement, 258 = authentication in documented LDN formats)\n';out+='reserved @0x08..09: '+hex(b.slice(8,10))+' (documented as zero for advertisement)\n';out+='padding @0x0A..0B: '+hex(b.slice(10,12))+'\n';if(u16le(b,6)===257){if(b.length<52){out+='\nAdvertisement payload envelope: TRUNCATED / INCOMPLETE\n';out+='Known header fields above are still decoded. Available bytes after the 12-byte header: '+Math.max(0,b.length-12)+'. A complete documented envelope needs at least 52 bytes total.\n';out+='Advertisement payload fields: UNKNOWN because the envelope is incomplete.\n';}else{const p=b.slice(12);out+='\nAdvertisement payload envelope:\n';out+='session info @0x0C..2B: '+hex(p.slice(0,32))+' (raw bytes; internal fields not decoded)\n';out+='LDN version @0x2C: '+p[32]+'\n';out+='encryption type @0x2D: '+p[33]+' ('+({1:'plain',2:'AES-CTR',3:'AES-GCM'}[p[33]]||'unknown')+')\n';out+='advertisement data size @0x2E..2F LE: '+u16le(p,34)+'\n';out+='nonce @0x30..33: '+hex(p.slice(36,40))+'\n';out+='payload after envelope: '+Math.max(0,p.length-40)+' bytes. Hash/MAC, encrypted data, and game-specific fields are not decoded.\n';if(p[33]===3)out+='AES-GCM envelope documents a 16-byte MAC followed by encrypted advertisement data; offsets are version-dependent, so remainder marked unknown.\n';else if(p[33]===1||p[33]===2)out+='Plain/AES-CTR documentation describes a 32-byte hash before advertisement data; this inspector does not validate the hash or decrypt the payload.\n';}}else out+='Payload schema: UNKNOWN here; this inspector only recognizes the documented envelope.\n';}else if(kind==='auth'){need(b,6,'LDN authentication frame header');out+='Format: LDN authentication frame body (header only)\n';out+='OUI @0x00..02: '+hex(b.slice(0,3))+' (documented value 00 22 aa)\n';out+='packet type @0x03..04 LE: '+u16le(b,3)+' (258 = authentication)\n';out+='padding @0x05: '+b[5]+'\n';if(b.length>=0x0e){out+='LDN version @0x06: '+b[6]+'\n';out+='payload size low @0x07: '+b[7]+'\n';out+='status @0x08: '+b[8]+' (0 is request/success depending on message direction; do not infer success without context)\n';out+='direction @0x09: '+b[9]+' (0=request, 1=response)\n';out+='payload size high @0x0A: '+b[10]+'\n';out+='reserved @0x0B..0D: '+hex(b.slice(11,14))+'\n';out+='Remaining fields: only decode against the exact LDN version and documented frame layout. No authentication generation or crypto validation.\n';}else out+='Authentication data fields: truncated/unknown.\n';}else{out+='Format: Pia LAN packet (type byte only)\n';const t=b[0],types={0:'Browse request',1:'Browse reply',3:'Host request',4:'Host message',5:'Session request',6:'Session message',7:'Keepalive message'};out+='type @0x00: '+t+' ('+(types[t]||'Unknown packet type')+')\n';out+='Remaining '+(b.length-1)+' bytes: NOT DECODED. Layout varies by Pia version; this tool will not guess a version or parse unknown fields.\n';}out+='\nEvidence status: syntax/field recognition only. Not proof of capture authenticity, network reception, or successful joining.';$('result').textContent=out;}catch(e){$('result').textContent='Cannot decode: '+e.message+'\nNo assumptions made.'}}
 $('decode').addEventListener('click',decode);$('sample').addEventListener('click',()=>{$('kind').value='ldn';$('hex').value='7f 00 22 aa 04 00 01 01 00 00 00 00';$('result').textContent='Sample header loaded. Press Decode documented fields. Note: this sample is only the documented header bytes, not a full valid advertisement.'});$('clear').addEventListener('click',()=>{$('hex').value='';$('result').textContent='Cleared. No packet decoded.'});
+
+function checkBrowserApis(){
+ const rows=[
+  ['serial-status',!!(navigator&&navigator.serial),'Web Serial'],
+  ['usb-status',!!(navigator&&navigator.usb),'WebUSB'],
+  ['bt-status',!!(navigator&&navigator.bluetooth),'Web Bluetooth'],
+  ['secure-status',!!window.isSecureContext,'Secure context']
+ ];
+ for(const [id,ok,label] of rows){const el=document.getElementById(id);if(el){el.textContent=ok?'Available in this browser':'Not available here';el.style.color=ok?'var(--green)':'var(--gold)';}}
+}
+document.getElementById('check-apis')?.addEventListener('click',checkBrowserApis);
+checkBrowserApis();
+
 </script></body></html>
