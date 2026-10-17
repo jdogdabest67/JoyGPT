@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#09111f">
+<title>Phone-Con v3 | WebHID Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#09111f;--panel:#142239;--line:#30415d;--text:#eef5ff;--muted:#a8bad3;--blue:#21b8ff;--green:#58e39b;--gold:#ffd38a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#192b48,var(--bg) 68%);color:var(--text);font:15px system-ui,sans-serif;padding:12px;min-height:100vh}main{max-width:850px;margin:auto;display:grid;gap:12px}.panel{background:#142239ee;border:1px solid var(--line);border-radius:16px;padding:14px}.title{font-size:clamp(24px,6vw,34px);font-weight:950}.muted{color:var(--muted);font-size:13px;line-height:1.5}h2{font-size:17px;margin:0 0 8px}.buttons{display:flex;flex-wrap:wrap;gap:8px}button{background:#203653;color:var(--text);border:1px solid #526987;border-radius:10px;padding:11px 14px;font-weight:800;touch-action:manipulation}button:active{background:#27517a}.readout{font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#09111f;border-radius:10px;padding:10px;margin-top:8px}.good{color:var(--green)}.warn{color:var(--gold)}.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:330px}.pad button{min-height:48px}.wide{grid-column:1/4}.callout{border-left:3px solid var(--gold);padding:8px 10px;background:#30251655;border-radius:0 8px 8px 0;font-size:13px;line-height:1.5}
+</style>
+</head>
+<body><main>
+<header><div class="title">📱 PHONE-CON <span style="color:var(--blue)">v3</span></div><div class="muted">Offline controller playground + WebHID discovery lab</div></header>
+<section class="panel"><h2>Browser capability report</h2><div id="caps" class="readout">Checking browser…</div><p class="muted">WebHID usually requires a secure context such as HTTPS or localhost. Opening a file directly may show the API as unavailable, depending on your browser.</p></section>
+<section class="panel"><h2>WebHID device lab</h2><div class="callout"><b>Read-only experiment:</b> choose a compatible HID device from Chrome's picker. This page opens it and listens for input reports. It sends no output reports and cannot make the phone advertise itself as a Bluetooth controller.</div><div class="buttons" style="margin-top:10px"><button id="connect">Request a HID device</button><button id="disconnect">Disconnect</button><button id="clear">Clear reports</button></div><div id="status" class="readout">Not tested yet.</div><div id="device" class="readout">No device selected.</div><div id="reports" class="readout">Input reports will appear here if the device sends any.</div></section>
+<section class="panel"><h2>Touch controller sandbox</h2><p class="muted">Press and hold buttons to test input state. This is local simulation only, not a Switch connection.</p><div class="pad" id="pad"><button data-k="UP" class="wide">▲</button><button data-k="LEFT">◀</button><button data-k="DOWN">▼</button><button data-k="RIGHT">▶</button><button data-k="A">A</button><button data-k="B">B</button><button data-k="X">X</button><button data-k="Y">Y</button><button data-k="L">L</button><button data-k="R">R</button><button data-k="ZL">ZL</button><button data-k="ZR">ZR</button></div><div class="buttons" style="margin-top:10px"><button id="release">Release all</button><button id="copy">Copy state JSON</button></div><div id="state" class="readout"></div></section>
+<footer class="muted">Phone-Con v3 · No network calls · No controller output commands</footer>
+</main>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);let dev=null,count=0;const held=new Set();let events=[];
+function state(){return {timestamp:new Date().toISOString(),transport:'local simulation only; no Switch link',buttons:[...held].sort(),lastEvents:events.slice(0,12)}}
+function render(){ $('state').textContent=JSON.stringify(state(),null,2);document.querySelectorAll('[data-k]').forEach(b=>b.style.outline=held.has(b.dataset.k)?'2px solid #21b8ff':'none')}
+function log(s){events.unshift(new Date().toLocaleTimeString()+' '+s);events=events.slice(0,12)}
+document.querySelectorAll('[data-k]').forEach(b=>{const down=e=>{e.preventDefault();held.add(b.dataset.k);log('press '+b.dataset.k);render()};const up=e=>{e.preventDefault();held.delete(b.dataset.k);log('release '+b.dataset.k);render()};b.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture'].forEach(n=>b.addEventListener(n,up))});
+function bytes(a){return Array.from(a||[]).map(x=>x.toString(16).padStart(2,'0')).join(' ')}
+function input(e){count++;$('reports').textContent='#'+count+' '+new Date().toLocaleTimeString()+' reportId='+e.reportId+' bytes=['+bytes(e.data)+']\n'+$('reports').textContent.slice(0,12000)}
+function showDevice(d){$('device').textContent=d?JSON.stringify({productName:d.productName||'(unnamed)',vendorId:'0x'+d.vendorId.toString(16),productId:'0x'+d.productId.toString(16),opened:d.opened,collections:(d.collections||[]).map(c=>({usagePage:c.usagePage,usage:c.usage,inputReports:(c.inputReports||[]).map(r=>r.reportId),outputReports:(c.outputReports||[]).map(r=>r.reportId)}))},null,2):'No device selected.'}
+$('connect').onclick=async()=>{if(!navigator.hid){$('status').textContent='WebHID is NOT exposed here. Try a current Chrome Beta tab served from HTTPS, if available.';return}try{$('status').textContent='Choose a device in the browser picker…';const list=await navigator.hid.requestDevice({filters:[]});if(!list.length){$('status').textContent='No device selected.';return}if(dev){dev.removeEventListener('inputreport',input);if(dev.opened)await dev.close()}dev=list[0];dev.addEventListener('inputreport',input);if(!dev.opened)await dev.open();showDevice(dev);$('status').textContent='Connected for read-only input reports. No output reports are sent.'}catch(e){$('status').textContent=e.name+': '+e.message}};
+$('disconnect').onclick=async()=>{if(!dev){$('status').textContent='No selected device.';return}dev.removeEventListener('inputreport',input);try{if(dev.opened)await dev.close();$('status').textContent='Device closed.'}catch(e){$('status').textContent='Close error: '+e.message}dev=null;showDevice(null)};
+$('clear').onclick=()=>{count=0;$('reports').textContent='Input report log cleared.'};
+$('release').onclick=()=>{held.clear();log('release all');render()};
+$('copy').onclick=async()=>{const s=JSON.stringify(state(),null,2);try{await navigator.clipboard.writeText(s)}catch(e){prompt('Copy state JSON',s)}};
+const caps=['Protocol: '+location.protocol,'Secure context: '+isSecureContext,'Touch support: '+('ontouchstart' in window || navigator.maxTouchPoints>0),'WebHID API: '+('hid' in navigator?'EXPOSED':'NOT EXPOSED'),'Web Bluetooth client API: '+('bluetooth' in navigator?'present':'not exposed'),'Phone Bluetooth HID advertising via WebHID: not supported','Switch connection: not implemented'];$('caps').textContent=caps.join('\n');render();
+})();
+</script></body></html>
